@@ -428,6 +428,12 @@ class ExpressionEvaluatorTest {
 		System.out.println("Test # "+testNum+"\nExpression Results: "+evalResults+"\nResult: "+errMatch+"\n\n");
 		assertTrue(errMatch);
 
+		// test #
+		testNum++;
+		evalResults = exprEval.evaluateExpression("5 * - 7");
+		errMatch = evalResults.contains("Op Error:");
+		System.out.println("Test # "+testNum+"\nExpression Results: "+evalResults+"\nResult: "+errMatch+"\n\n");
+		assertTrue(errMatch);
 	}
 	
 	/**
