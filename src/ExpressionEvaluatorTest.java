@@ -421,6 +421,13 @@ class ExpressionEvaluatorTest {
 		System.out.println("Test # "+testNum+"\nExpression Results: "+evalResults+"\nResult: "+errMatch+"\n\n");
 		assertTrue(errMatch);
 
+		// test #
+		testNum++;
+		evalResults = exprEval.evaluateExpression("(+5)*7");
+		errMatch = evalResults.contains("Op Error:");
+		System.out.println("Test # "+testNum+"\nExpression Results: "+evalResults+"\nResult: "+errMatch+"\n\n");
+		assertTrue(errMatch);
+
 	}
 	
 	/**
@@ -704,5 +711,12 @@ class ExpressionEvaluatorTest {
 		System.out.println("Test # "+testNum+"\nExpression Results: "+evalResults+"\nResult: "+drslt+"\n\n");
 		assertEquals(-95,drslt,0.00005);  
 
+		// test #
+		testNum++;
+		evalResults = exprEval.evaluateExpression("-(1+(-(10+-(2*-5))+2)+100)");
+		results = evalResults.split("=");
+		drslt = Double.parseDouble(results[1].trim());
+		System.out.println("Test # "+testNum+"\nExpression Results: "+evalResults+"\nResult: "+drslt+"\n\n");
+		assertEquals(-83,drslt,0.00005);  
 	}
 }
