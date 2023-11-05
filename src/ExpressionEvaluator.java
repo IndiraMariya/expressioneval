@@ -22,7 +22,48 @@ public class ExpressionEvaluator {
 	 * @return the string[] of tokens
 	 */
 	private String[] convertToTokens(String str) {
-		return null;
+		
+		String startNeg = "^(\\s*)\\-([0-9\\.])";
+		str = str.replaceAll(startNeg, "$1Neg$2");
+		String neg = "([\\+\\/\\*\\-\\(]\\s*)\\-([0-9\\.])";
+		str = str.replaceAll(neg, "$1 Neg$2");
+		
+		String op = "([\\+\\-\\/\\*\\(\\)])";
+		str = str.replaceAll(op, " $1 ");
+		
+		String imMul1 = "\\)\\s+[0-9\\.\\(]";
+		str = str.replaceAll(imMul1, ") * $1");
+		String imMul2 = "([0-9\\.]\\s+\\()";
+		str.replaceAll(imMul2, "$1 * (");
+		
+		str.replaceAll("Neg", "\\-");
+		
+		String implicit = "(^\\s*|[\\(\\+\\-\\/\\*])\\s*\\-\\s+\\(";
+		str = str.replaceAll(implicit, "|");
+		
+		String newString = str;
+		System.out.println(str);
+		while(newString.matches("|")){
+			int mark = str.indexOf('|');
+			int match = 0;
+			for (int i = 0; i < newString.length(); i++) {
+				int count = 0; 
+				if (newString.charAt(i) == '(')
+					count++;
+				if (newString.charAt(i) == ')')
+					count--;
+				if (count == 0 & i > 0) {
+					match = i;
+					break; 
+				}
+			}
+			newString = newString.substring(0, mark) + "( -1 * " + newString.substring(mark+1, match) + " ) " + newString.substring(match);
+		}
+		str = newString;
+		str.trim();
+		String[] tokens = str.split("\\s+");
+		
+		return tokens;
 	}
 	
 	/**
@@ -49,8 +90,54 @@ public class ExpressionEvaluator {
 	protected String evaluateExpression(String str) {
         dataStack =  new GenericStack<Double>();
 		operStack =  new GenericStack<String>();
-		
-		return ("You need to code this!");
+		int count = 0;
+		String tokens[] = convertToTokens(str);
+		for (String token: tokens) {
+			if (token.matches("[\\+\\-\\*\\/\\(\\)]")) {
+				if (operStack.size()== 0 || precedence(token) > precedence(operStack.peek()))
+					operStack.push(token);
+				else {
+					evaluateTOS();
+					operStack.push(token);
+				}	
+			}
+			else {
+				Double data = Double.parseDouble(token);
+				dataStack.push(data);
+			}
+			System.out.println(dataStack.peek());
+		}
+		while (dataStack.size() != 1) {
+			evaluateTOS();
+		}
+		return (str + "=" + dataStack.pop());
 	}
+	
+	private int precedence(String op1) {
+		if (op1.matches("\\("))
+			return 3;
+		if (op1.matches("[\\/\\*]"))
+			return 2;
+		return 1;
+	}
+	
+	private void evaluateTOS(){
+		Double result = 0.0;
+		String op = operStack.pop();
+		Double d2 = dataStack.pop();
+		Double d1 = dataStack.pop();
+		if (op.equals("+"))
+		    result = d1 + d2;
+		if (op.equals("-"))
+		    result = d1 - d2;
+		if (op.equals("/"))
+		    result = d1 / d2;
+		if (op.equals("*"))
+		    result = d1 * d2;
+		dataStack.push(result);	
+		
+	}
+	
+	
 
 }
