@@ -83,18 +83,26 @@ public class ExpressionEvaluator {
 		for (int i = 0; i < str.length(); i++) {
 			char character = str.charAt(i);
 			String sub = str.substring(i, i+1);
-//			if (!sub.matches("[\\/\\*\\(\\)\\-\\+[0-9]]")) {
-//				return "Data Error: ";
-//			}
-			if (character == '(')
+			if (!sub.matches("[0-9\\.\\(\\)\\-\\+\\*\\/\\s]"))
+				return "Data Error: ";
+			if (character == '(') {
+				if (i < str.length()-1 && str.charAt(i+1) == '+') {
+					return "Op Error: ";
+				}
 				count++;
+			}
 			if (character == ')') {
-				if (str.length()<= 2) {
+				if (str.length()== 1) {
 					return "Paren Error: ";
 				}
 				int num = str.charAt(i-1) - '0';
-				if (num<0 || num >9)
-					return "Paren Error: ";
+				if (num < 0 || num > 9) {
+					if (str.charAt(i-1) == '*' || str.charAt(i-1) == '+'|| str.charAt(i-1) == '\\'|| str.charAt(i-1) == '-')
+						return "Op Error:";
+					else {
+						return "Paren Error: ";
+					}
+				}
 				count--;
 			}
 			if (count < 0)
@@ -105,7 +113,31 @@ public class ExpressionEvaluator {
 		
 		
 		String tokens[] = convertToTokens(str);
-		for (String token: tokens) {
+		for (int i = 0; i < tokens.length; i++) {
+			String token = tokens[i];
+			
+			if (i == 0 && !token.matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(\\-]|[0-9]+")) {
+				if (token.matches("[\\+\\*\\/]"))
+					return "Op Error: ";
+			    return "Data Error: ";
+			}
+
+			if (i >= 1) {
+				if (i >=2) {
+					if (token.matches("[\\+\\*\\/\\-]") && tokens[i-1].matches("[\\+\\*\\/\\-]") && tokens[i-2].matches("[\\+\\*\\/\\-]") )
+						return "Op Error: ";
+				}
+				if (token.matches("\\)") && tokens[i-1].matches("[\\+\\*\\/\\-]"))
+					return "Op Error: ";
+				if (token.matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(]|[0-9]+") && !tokens[i-1].matches("[\\+\\*\\/\\-\\)\\(]"))
+					return "Data Error: ";
+				if (token.matches("[\\+\\*\\/\\-]") && !tokens[i-1].matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(\\-\\)]|[0-9]+"))
+					return "Op Error: ";
+			}
+			
+			if (i == tokens.length-1 && token.matches("[\\+\\*\\/\\-]"))
+				return "Op Error: ";
+
 			if (token.matches("[\\+\\-\\*\\/\\(\\)]")) {
 				if (token.equals(")")) {
 					while (!operStack.peek().equals("("))
