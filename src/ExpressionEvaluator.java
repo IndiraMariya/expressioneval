@@ -36,31 +36,20 @@ public class ExpressionEvaluator {
 		String imMul2 = "([0-9\\.]\\s+\\()";
 		str.replaceAll(imMul2, "$1 * (");
 		
-		str.replaceAll("Neg", "\\-");
-		
-		String implicit = "(^\\s*|[\\(\\+\\-\\/\\*])\\s*\\-\\s+\\(";
-		str = str.replaceAll(implicit, "|");
+//		str.replaceAll("Neg", "\\-");
+//		
+//		String implicit = "(^\\s*|[\\(\\+\\-\\/\\*])\\s*\\-\\s+\\(";
+//		str = str.replaceAll(implicit, "|");
 		
 		String newString = str;
 		System.out.println(str);
 		while(newString.matches("|")){
 			int mark = str.indexOf('|');
 			int match = 0;
-			for (int i = 0; i < newString.length(); i++) {
-				int count = 0; 
-				if (newString.charAt(i) == '(')
-					count++;
-				if (newString.charAt(i) == ')')
-					count--;
-				if (count == 0 & i > 0) {
-					match = i;
-					break; 
-				}
-			}
 			newString = newString.substring(0, mark) + "( -1 * " + newString.substring(mark+1, match) + " ) " + newString.substring(match);
 		}
 		str = newString;
-		str.trim();
+		str = str.trim();
 		String[] tokens = str.split("\\s+");
 		
 		return tokens;
@@ -91,21 +80,56 @@ public class ExpressionEvaluator {
         dataStack =  new GenericStack<Double>();
 		operStack =  new GenericStack<String>();
 		int count = 0;
+		for (int i = 0; i < str.length(); i++) {
+			char character = str.charAt(i);
+			String sub = str.substring(i, i+1);
+//			if (!sub.matches("[\\/\\*\\(\\)\\-\\+[0-9]]")) {
+//				return "Data Error: ";
+//			}
+			if (character == '(')
+				count++;
+			if (character == ')') {
+				if (str.length()<= 2) {
+					return "Paren Error: ";
+				}
+				int num = str.charAt(i-1) - '0';
+				if (num<0 || num >9)
+					return "Paren Error: ";
+				count--;
+			}
+			if (count < 0)
+				return "Paren Error: more Rparen";
+		}
+		if (count !=0)
+			return "Paren Error: paren pairs dont match";
+		
+		
 		String tokens[] = convertToTokens(str);
 		for (String token: tokens) {
 			if (token.matches("[\\+\\-\\*\\/\\(\\)]")) {
-				if (operStack.size()== 0 || precedence(token) > precedence(operStack.peek()))
+				if (token.equals(")")) {
+					while (!operStack.peek().equals("("))
+						evaluateTOS();
+					if (operStack.peek().equals("("))
+						operStack.pop();
+				}
+				else if (operStack.size()== 0 || precedence(token) > precedence(operStack.peek()))
 					operStack.push(token);
 				else {
-					evaluateTOS();
-					operStack.push(token);
+					if (operStack.peek().equals("("))
+						operStack.push(token);
+					else {
+						while (dataStack.size() != 1 && !operStack.peek().equals("(")) {
+					        evaluateTOS();
+					    }
+						operStack.push(token);
+					}
 				}	
 			}
 			else {
 				Double data = Double.parseDouble(token);
 				dataStack.push(data);
 			}
-			System.out.println(dataStack.peek());
 		}
 		while (dataStack.size() != 1) {
 			evaluateTOS();
