@@ -22,33 +22,26 @@ public class ExpressionEvaluator {
 	 * @return the string[] of tokens
 	 */
 	private String[] convertToTokens(String str) {
+		str = str.replaceAll("([\\+\\*\\/\\-])\\-\\(", "$1-1(");
 		
 		String startNeg = "^(\\s*)\\-([0-9\\.])";
 		str = str.replaceAll(startNeg, "$1Neg$2");
 		String neg = "([\\+\\/\\*\\-\\(]\\s*)\\-([0-9\\.])";
 		str = str.replaceAll(neg, "$1 Neg$2");
 		
+
+		str = str.replaceAll("\\)\\s*\\(", ") * (");
+		str = str.replaceAll("(\\d)(?=\\()", "$1*");
+		str = str.replaceAll("(\\.\\d)(?=\\()", "$1*");
+		str = str.replaceAll("(?<=\\))(\\d)", "*$1");
+		str = str.replaceAll("(?<=\\))(\\.\\d)", "*$1");
+
+		
 		String op = "([\\+\\-\\/\\*\\(\\)])";
 		str = str.replaceAll(op, " $1 ");
 		
-		String imMul1 = "\\)\\s+[0-9\\.\\(]";
-		str = str.replaceAll(imMul1, ") * $1");
-		String imMul2 = "([0-9\\.]\\s+\\()";
-		str.replaceAll(imMul2, "$1 * (");
+		str = str.replaceAll("Neg(\\d*)", "-$1");
 		
-//		str.replaceAll("Neg", "\\-");
-//		
-//		String implicit = "(^\\s*|[\\(\\+\\-\\/\\*])\\s*\\-\\s+\\(";
-//		str = str.replaceAll(implicit, "|");
-		
-		String newString = str;
-		System.out.println(str);
-		while(newString.matches("|")){
-			int mark = str.indexOf('|');
-			int match = 0;
-			newString = newString.substring(0, mark) + "( -1 * " + newString.substring(mark+1, match) + " ) " + newString.substring(match);
-		}
-		str = newString;
 		str = str.trim();
 		String[] tokens = str.split("\\s+");
 		
@@ -83,7 +76,7 @@ public class ExpressionEvaluator {
 		for (int i = 0; i < str.length(); i++) {
 			char character = str.charAt(i);
 			String sub = str.substring(i, i+1);
-			if (!sub.matches("[0-9\\.\\(\\)\\-\\+\\*\\/\\s]"))
+			if (!sub.matches("[0-9\\.\\(\\)\\+\\-\\*\\/\\s]"))
 				return "Data Error: ";
 			if (character == '(') {
 				if (i < str.length()-1 && str.charAt(i+1) == '+') {
@@ -112,11 +105,11 @@ public class ExpressionEvaluator {
 			return "Paren Error: paren pairs dont match";
 		
 		
-		String tokens[] = convertToTokens(str);
+ 		String tokens[] = convertToTokens(str);
 		for (int i = 0; i < tokens.length; i++) {
 			String token = tokens[i];
 			
-			if (i == 0 && !token.matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(\\-]|[0-9]+")) {
+			if (i == 0 && !token.matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(\\-]|[0-9]+|^-?[0-9]+\\.?[0-9]*$|^-[.0-9]+$")) {
 				if (token.matches("[\\+\\*\\/]"))
 					return "Op Error: ";
 			    return "Data Error: ";
@@ -131,8 +124,8 @@ public class ExpressionEvaluator {
 					return "Op Error: ";
 				if (token.matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(]|[0-9]+") && !tokens[i-1].matches("[\\+\\*\\/\\-\\)\\(]"))
 					return "Data Error: ";
-				if (token.matches("[\\+\\*\\/\\-]") && !tokens[i-1].matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(\\-\\)]|[0-9]+"))
-					return "Op Error: ";
+				if (token.matches("[\\+\\*\\/\\-]") && !tokens[i-1].matches("^\\.[0-9]+|^\\d+\\.$|[0-9]+\\.[0-9]+|[0-9\\(\\)]|[0-9]+|^-?[0-9]+\\.?[0-9]*$"))
+					 return "Op Error: ";
 			}
 			
 			if (i == tokens.length-1 && token.matches("[\\+\\*\\/\\-]"))
@@ -140,8 +133,12 @@ public class ExpressionEvaluator {
 
 			if (token.matches("[\\+\\-\\*\\/\\(\\)]")) {
 				if (token.equals(")")) {
-					while (!operStack.peek().equals("("))
+					while (!operStack.peek().equals("(")) {
+						if (operStack.peek().equals("/")&& dataStack.peek() == 0) {
+							return "Div0 Error: ";
+						}
 						evaluateTOS();
+					}
 					if (operStack.peek().equals("("))
 						operStack.pop();
 				}
@@ -152,6 +149,9 @@ public class ExpressionEvaluator {
 						operStack.push(token);
 					else {
 						while (dataStack.size() != 1 && !operStack.peek().equals("(")) {
+							if (operStack.peek().equals("/")&& dataStack.peek() == 0) {
+								return "Div0 Error: ";
+							}
 					        evaluateTOS();
 					    }
 						operStack.push(token);
@@ -164,6 +164,9 @@ public class ExpressionEvaluator {
 			}
 		}
 		while (dataStack.size() != 1) {
+			if (operStack.peek().equals("/")&& dataStack.peek() == 0) {
+				return "Div0 Error: ";
+			}
 			evaluateTOS();
 		}
 		return (str + "=" + dataStack.pop());
