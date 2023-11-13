@@ -22,7 +22,10 @@ public class ExpressionEvaluator {
 	 * @return the string[] of tokens
 	 */
 	private String[] convertToTokens(String str) {
-		str = str.replaceAll("([\\+\\*\\/\\-])\\-\\(", "$1-1(");
+		str = str.replaceAll("([\\+\\*\\-])\\-\\(", "$1-1(");
+		str = str.replaceAll("(\\/)-\\(([^)]+)\\)", "/(-1($2))");
+		str = str.replaceAll("^\\-", "-1*");
+		str = str.replaceAll("\\(\\-\\(", "(-1*(");
 		
 		String startNeg = "^(\\s*)\\-([0-9\\.])";
 		str = str.replaceAll(startNeg, "$1Neg$2");
@@ -93,7 +96,8 @@ public class ExpressionEvaluator {
 					if (str.charAt(i-1) == '*' || str.charAt(i-1) == '+'|| str.charAt(i-1) == '\\'|| str.charAt(i-1) == '-')
 						return "Op Error:";
 					else {
-						return "Paren Error: ";
+						if (str.charAt(i-1) != ')')
+							return "Paren Error: ";
 					}
 				}
 				count--;
